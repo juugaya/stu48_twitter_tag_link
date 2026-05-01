@@ -278,23 +278,30 @@ const DEFAULT_DATA = {
 const STORAGE_KEY = 'stu48-hashtag-data-v1';
 let stu48Data = JSON.parse(JSON.stringify(DEFAULT_DATA)); // Deep copy
 
+<script>
+// ===== デフォルトデータ =====
+const DEFAULT_DATA = { /* そのまま */ };
+
+const STORAGE_KEY = 'stu48-hashtag-data-v1';
+let stu48Data = structuredClone(DEFAULT_DATA);
+
 // ===== ストレージ =====
-async function loadData() {
+function loadData() {
     try {
-        // storage.get is assumed to be a custom function available in the environment
-        const result = await window.storage.get(STORAGE_KEY, true);
-        if (result && result.value) {
-            const parsed = JSON.parse(result.value);
-            for (const gen of Object.keys(DEFAULT_DATA)) {
-                if (parsed[gen] && Array.isArray(parsed[gen])) {
-                    stu48Data[gen] = parsed[gen];
-                }
-            }
-        }
-    } catch (e) { /* 未保存 → デフォルトのまま */ }
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!data) return;
+
+        Object.keys(DEFAULT_DATA).forEach(gen => {
+            if (data[gen]) stu48Data[gen] = data[gen];
+        });
+    } catch {}
 }
 
-// ===== 投稿タブ =====
+function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stu48Data));
+}
+
+// ===== DOM =====
 const generationSelect = document.getElementById('generationSelect');
 const memberSelect     = document.getElementById('memberSelect');
 const tagCheckboxes    = document.getElementById('tagCheckboxes');
@@ -305,108 +312,133 @@ const copyButton       = document.getElementById('copyButton');
 const tweetButton      = document.getElementById('tweetButton');
 
 const GEN_TAG = {
-    '1st':'#STU48_1期生','draft3rd':'#STU48_ドラフト3期生',
-    '2nd':'#STU48_2期生','2.5th':'#STU48_2_5期生',
-    '3rd':'#STU48_3期生','4th':'#STU48_4期生'
+    '1st': '#STU48_1期生',
+    'draft3rd': '#STU48_ドラフト3期生',
+    '2nd': '#STU48_2期生',
+    '2.5th': '#STU48_2_5期生',
+    '3rd': '#STU48_3期生',
+    '4th': '#STU48_4期生'
 };
 
+// ===== タグ生成 =====
 function getCandidateTags() {
     const gen = generationSelect.value;
     const mem = memberSelect.value;
-    let tags = ['#STU48'];
+
+    const tags = ['#STU48'];
+
     if (gen) {
         if (GEN_TAG[gen]) tags.push(GEN_TAG[gen]);
+
         if (mem) {
             const found = stu48Data[gen]?.find(m => m.name === mem);
-            if (found) tags = tags.concat(found.hashtags);
+            if (found) tags.push(...found.hashtags);
         }
     }
-    return [...new Set(tags)]; // Remove duplicates
+
+    return [...new Set(tags)];
 }
 
 function renderTagCheckboxes(tags) {
     tagCheckboxes.innerHTML = '';
+
     if (!tags.length) {
-        tagCheckboxes.innerHTML = '<span class="tag-placeholder">期生・メンバーを選択するとタグが表示されます</span>';
-    } else {
-        tags.forEach(tag => {
-            const chip = document.createElement('label');
-            chip.className = 'tag-chip';
-            const cb = document.createElement('input');
-            cb.type = 'checkbox'; cb.value = tag; cb.checked = true;
-            cb.addEventListener('change', updatePreview);
-            const span = document.createElement('span');
-            span.textContent = tag;
-            chip.appendChild(cb); chip.appendChild(span);
-            tagCheckboxes.appendChild(chip);
-        });
+        tagCheckboxes.innerHTML =
+            '<span class="tag-placeholder">期生・メンバーを選択するとタグが表示されます</span>';
+        return;
     }
-    updatePreview(); // Update preview after rendering tags
+
+    tags.forEach(tag => {
+        const label = document.createElement('label');
+        label.className = 'tag-chip';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = tag;
+        cb.checked = true;
+        cb.addEventListener('change', updatePreview);
+
+        const span = document.createElement('span');
+        span.textContent = tag;
+
+        label.append(cb, span);
+        tagCheckboxes.appendChild(label);
+    });
 }
 
 function getSelectedTags() {
-    return [...tagCheckboxes.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+    return [...tagCheckboxes.querySelectorAll('input:checked')]
+        .map(cb => cb.value);
 }
 
+// ===== 投稿生成 =====
 function buildPostText() {
     const body = postBody.value.trim();
     const tags = getSelectedTags().join(' ');
-    if (body && tags) return body + '\n' + tags;
+
+    if (body && tags) return `${body}\n${tags}`;
     return body || tags;
 }
 
 function updatePreview() {
     const text = buildPostText();
-    if (text) {
-        previewBox.textContent = text;
-    } else {
-        previewBox.innerHTML = '<span class="preview-placeholder">（プレビューなし）</span>';
-    }
-    const len = [...text].length; // Use spread operator for accurate character count with potential multi-byte characters
+    const len  = text.length;
+
+    previewBox.textContent = text || '（プレビューなし）';
+
     charCount.textContent = `${len} / 140文字`;
     charCount.classList.toggle('over', len > 140);
-    tweetButton.disabled = len > 140 || len === 0;
+
+    tweetButton.disabled = len === 0 || len > 140;
 }
 
+// ===== セレクト =====
 function rebuildMemberSelect(gen) {
     memberSelect.innerHTML = '<option value="">メンバーを選択</option>';
     memberSelect.disabled = true;
-    if (gen && stu48Data[gen]) {
-        stu48Data[gen].forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.name; opt.textContent = m.name;
-            memberSelect.appendChild(opt);
-        });
-        memberSelect.disabled = false;
-    }
+
+    if (!gen || !stu48Data[gen]) return;
+
+    stu48Data[gen].forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.name;
+        opt.textContent = m.name;
+        memberSelect.appendChild(opt);
+    });
+
+    memberSelect.disabled = false;
 }
 
+// ===== イベント =====
 generationSelect.addEventListener('change', () => {
     rebuildMemberSelect(generationSelect.value);
     renderTagCheckboxes(getCandidateTags());
+    updatePreview();
 });
-memberSelect.addEventListener('change', () => renderTagCheckboxes(getCandidateTags()));
+
+memberSelect.addEventListener('change', () => {
+    renderTagCheckboxes(getCandidateTags());
+    updatePreview();
+});
+
 postBody.addEventListener('input', updatePreview);
 
 copyButton.addEventListener('click', () => {
     const tags = getSelectedTags().join(' ');
-    if (!tags) { alert('選択されたタグがありません。'); return; }
-    try {
-        navigator.clipboard.writeText(tags);
-    } catch {
-        // Fallback for older browsers
-        const tmp = document.createElement('textarea');
-        tmp.value = tags; document.body.appendChild(tmp);
-        tmp.select(); document.execCommand('copy'); document.body.removeChild(tmp);
-    }
-    alert('タグをコピーしました！');
+    if (!tags) return alert('タグがありません');
+
+    navigator.clipboard.writeText(tags);
+    alert('コピーしました');
 });
 
 tweetButton.addEventListener('click', () => {
     const text = buildPostText();
     if (!text) return;
-    // Use encodeURIComponent for proper URL encoding
-    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
+
+    window.open(
+        'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text),
+        '_blank'
+    );
 });
 
 // ===== 編集タブ =====
@@ -420,240 +452,73 @@ const saveStatus     = document.getElementById('saveStatus');
 function renderEditList(gen) {
     memberEditList.innerHTML = '';
     saveStatus.textContent = '';
-    if (!gen || !stu48Data[gen]) { editButtons.style.display = 'none'; return; }
 
-    const title = document.createElement('div');
-    title.className = 'edit-section-title';
-    title.textContent = 'メンバーのハッシュタグを編集';
-    memberEditList.appendChild(title);
+    if (!gen || !stu48Data[gen]) {
+        editButtons.style.display = 'none';
+        return;
+    }
 
-    const hint = document.createElement('div');
-    hint.className = 'hint';
-    hint.textContent = '# を含めてスペース区切りで入力　例: #石田千穂 #ちほ　※変更は「保存する」を押すと全員に反映されます';
-    memberEditList.appendChild(hint);
-
-    stu48Data[gen].forEach((member, idx) => {
+    stu48Data[gen].forEach((m, i) => {
         const row = document.createElement('div');
         row.className = 'member-edit-row';
 
-        const nameEl = document.createElement('div');
-        nameEl.className = 'member-name';
-        nameEl.textContent = member.name;
+        const name = document.createElement('div');
+        name.className = 'member-name';
+        name.textContent = m.name;
 
         const ta = document.createElement('textarea');
-        ta.value = member.hashtags.join(' ');
-        ta.rows = 2;
-        ta.dataset.idx = idx;
-        ta.placeholder = '#タグ1 #タグ2';
+        ta.value = m.hashtags.join(' ');
+        ta.dataset.idx = i;
 
-        row.appendChild(nameEl);
-        row.appendChild(ta);
+        row.append(name, ta);
         memberEditList.appendChild(row);
     });
 
     editButtons.style.display = 'flex';
 }
 
-editGenSelect.addEventListener('change', () => renderEditList(editGenSelect.value));
+editGenSelect.addEventListener('change', () =>
+    renderEditList(editGenSelect.value)
+);
 
-saveTagsBtn.addEventListener('click', async () => {
+saveTagsBtn.addEventListener('click', () => {
     const gen = editGenSelect.value;
     if (!gen) return;
 
-    const textareas = memberEditList.querySelectorAll('textarea[data-idx]');
-    let hasError = false;
-
-    textareas.forEach(ta => {
-        const tags = ta.value.trim().split(/\s+/).filter(t => t.length > 0);
-        const invalid = tags.filter(t => !t.startsWith('#'));
-        ta.classList.toggle('error', invalid.length > 0);
-        if (invalid.length > 0) {
-            hasError = true;
-        } else {
-            // Only update if no errors for this textarea
-            stu48Data[gen][parseInt(ta.dataset.idx)].hashtags = tags.length ? tags : [];
-        }
+    memberEditList.querySelectorAll('textarea').forEach(ta => {
+        stu48Data[gen][ta.dataset.idx].hashtags =
+            ta.value.trim().split(/\s+/);
     });
 
-    if (hasError) {
-        setStatus('⚠️ # で始まらないタグがあります（赤枠の欄を確認）', 'err');
-        return;
-    }
-
-    try {
-        setStatus('💾 保存中…', '');
-        await saveData(); // Assuming saveData function is defined and works with current stu48Data
-        setStatus('✅ 保存しました！みんなに反映されます。', 'ok');
-        // Update post tab if the same generation is selected
-        const curGen = generationSelect.value;
-        if (curGen === gen) {
-            const curMem = memberSelect.value;
-            rebuildMemberSelect(gen);
-            memberSelect.value = curMem; // Try to retain selected member
-            renderTagCheckboxes(getCandidateTags());
-        }
-    } catch (e) {
-        setStatus('❌ 保存に失敗しました。', 'err');
-    }
+    saveData();
+    saveStatus.textContent = '保存しました';
 });
 
-resetTagsBtn.addEventListener('click', async () => {
+resetTagsBtn.addEventListener('click', () => {
     const gen = editGenSelect.value;
     if (!gen) return;
-    const label = editGenSelect.options[editGenSelect.selectedIndex].text;
-    if (!confirm(`「${label}」のタグを初期値に戻しますか？\nこの操作は全員に反映されます。`)) return;
-    // Restore from original DEFAULT_DATA
-    stu48Data[gen] = JSON.parse(JSON.stringify(DEFAULT_DATA[gen]));
-    try {
-        await saveData(); // Assuming saveData function is defined
-        renderEditList(gen); // Re-render the list to show reset values
-        setStatus('✅ 初期値に戻しました。', 'ok');
-    } catch (e) {
-        setStatus('❌ 保存に失敗しました。', 'err');
-    }
+
+    stu48Data[gen] = structuredClone(DEFAULT_DATA[gen]);
+    saveData();
+    renderEditList(gen);
 });
 
-function setStatus(msg, type) {
-    saveStatus.textContent = msg;
-    saveStatus.className = 'status-msg ' + type;
-    if (type === 'ok') setTimeout(() => { saveStatus.textContent = ''; saveStatus.className = 'status-msg'; }, 4000);
-}
-
-// ===== タブ切り替え =====
-let editInitialized = false;
+// ===== タブ =====
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        document.querySelectorAll('.tab, .tab-content')
+            .forEach(el => el.classList.remove('active'));
 
-        // Lazy load edit tab content
-        if (tab.dataset.tab === 'edit' && !editInitialized) {
-            editInitialized = true;
-            document.getElementById('editLoading').style.display = 'none';
-            document.getElementById('editContent').style.display = 'block';
-        }
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab)
+            .classList.add('active');
     });
 });
 
-// ===== Gist Integration (assuming WORKER_URL and related functions exist and are correct) =====
-const WORKER_URL = "https://weathered-dream-9afgist-proxy.ogamcad.workers.dev/"; // Example worker URL
-
-// Collects all relevant app data for saving
-function collectAppData() {
-  // This function should return the entire current state of stu48Data
-  // and any other relevant user selections if they are to be stored.
-  // For this tool, the stu48Data is the primary data to save.
-  return stu48Data;
-}
-
-// Applies loaded app data to the current state
-function applyAppData(content) {
-  // Ensure the loaded content is structured correctly before applying
-  if (content && typeof content === 'object') {
-    for (const gen in DEFAULT_DATA) {
-      if (content[gen] && Array.isArray(content[gen])) {
-        stu48Data[gen] = content[gen];
-      }
-    }
-  }
-  // After applying data, re-render relevant parts of the UI
-  rebuildMemberSelect(generationSelect.value);
-  renderTagCheckboxes(getCandidateTags());
-  renderEditList(editGenSelect.value); // Also update edit tab if visible
-}
-
-// Saves data to Gist
-async function saveData() {
-  const gistId = document.getElementById("gistIdInput").value.trim();
-  const content = collectAppData();
-
-  const payload = {
-    method: gistId ? "update" : "create",
-    gist_id: gistId || undefined,
-    files: {
-      "data.json": {
-        content: JSON.stringify(content, null, 2) // Pretty print JSON
-      }
-    }
-  };
-
-  const res = await fetch(WORKER_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await res.json();
-
-  if (data.id) {
-    document.getElementById("gistIdInput").value = data.id;
-    document.getElementById("status").innerText = "保存完了: " + data.html_url;
-  } else {
-    document.getElementById("status").innerText = "保存エラー: " + JSON.stringify(data);
-    console.error("Gist Save Error:", data); // Log error for debugging
-  }
-}
-
-// Loads data from Gist
-async function loadData() {
-  const gistId = document.getElementById("gistIdInput").value.trim();
-  if (!gistId) {
-    // If no Gist ID is entered, assume the user wants to use default data or data from local storage
-    // For this tool, we'll check local storage if Gist ID is empty.
-    try {
-        const localData = localStorage.getItem(STORAGE_KEY);
-        if (localData) {
-            const parsed = JSON.parse(localData);
-            applyAppData(parsed);
-            document.getElementById("status").innerText = "ローカルストレージから読み込みました。";
-            return;
-        }
-    } catch (e) {
-        console.error("Error loading from local storage:", e);
-    }
-    // If no Gist ID and no local storage data, use default.
-    document.getElementById("status").innerText = "Gist ID が入力されていません。デフォルトデータを使用します。";
-    return;
-  }
-
-  try {
-    const res = await fetch(`${WORKER_URL}?gist_id=${gistId}`);
-    const data = await res.json();
-
-    if (!data.files || !data.files["data.json"]) {
-      document.getElementById("status").innerText = "読み込みエラー: Gist に data.json が見つかりません。";
-      console.error("Gist Load Error - Missing data.json:", data);
-      return;
-    }
-
-    const content = JSON.parse(data.files["data.json"].content);
-    applyAppData(content);
-    document.getElementById("status").innerText = "Gist から読み込み完了";
-
-    // Optionally save to local storage as well for quicker access
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
-    } catch (e) {
-        console.error("Error saving to local storage after Gist load:", e);
-    }
-
-  } catch (e) {
-    document.getElementById("status").innerText = "読み込みエラー: " + e.message;
-    console.error("Gist Load Error:", e);
-  }
-}
-
-// ===== Initial Load =====
-(async () => {
-    await loadData(); // Load data from storage (Gist or local)
-    // Initial render of tag checkboxes (empty or based on loaded data)
-    renderTagCheckboxes([]);
-    // Set initial state for edit tab
-    document.getElementById('editLoading').style.display = 'none';
-    document.getElementById('editContent').style.display = 'block';
-})();
+// ===== 初期化 =====
+loadData();
+renderTagCheckboxes([]);
+updatePreview();
 </script>
 </body>
 </html>
