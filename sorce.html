@@ -8,6 +8,16 @@
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>私のSTU48応援ページ</title>
     <meta name="description" content="私のSNSやSTU48応援ハッシュタグ生成ツールです。"> -->
+
+    <div style="margin:20px 0;">
+        <input id="gistIdInput" type="text" placeholder="Gist ID" style="width:250px;">
+        <button onclick="saveData()">保存</button>
+        <button onclick="loadData()">読み込み</button>
+    </div>
+
+<div id="status"></div>
+
+    
     <style>
         * { box-sizing: border-box; }
         body {
@@ -315,31 +325,9 @@ async function loadData() {
         }
     } catch (e) { /* 未保存 → デフォルトのまま */ }
 }
+
     
 
-async function saveToGist(content) {
-  const res = await fetch("https://weathered-dream-9afgist-proxy.ogamcad.workers.dev/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      description: "STU48_tag data",
-      public: false,
-      files: {
-        "data.json": {
-          content: JSON.stringify(content, null, 2)
-        }
-      }
-    })
-  });
-
-  const data = await res.json();
-  console.log("Gist created:", data.html_url);
-  alert("保存完了！\nURL: " + data.html_url);
-}
-    
-async function saveData() {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(stu48Data), true);
-}
 
 // ===== 投稿タブ =====
 const generationSelect = document.getElementById('generationSelect');
@@ -391,6 +379,7 @@ function renderTagCheckboxes(tags) {
     updatePreview();
 }
 
+    
 function getSelectedTags() {
     return [...tagCheckboxes.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
 }
@@ -578,6 +567,64 @@ document.querySelectorAll('.tab').forEach(tab => {
         }
     });
 });
+
+const WORKER_URL = "https://weathered-dream-9afgist-proxy.ogamcad.workers.dev/";
+
+// 保存処理（新規 or 更新）
+async function saveData() {
+  const gistId = document.getElementById("gistIdInput").value.trim();
+
+  // あなたのアプリのデータを取得
+  const content = collectAppData();
+
+  const payload = {
+    method: gistId ? "update" : "create",
+    gist_id: gistId || undefined,
+    files: {
+      "data.json": {
+        content: JSON.stringify(content, null, 2)
+      }
+    }
+  };
+
+  const res = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+
+  if (data.id) {
+    document.getElementById("gistIdInput").value = data.id;
+    document.getElementById("status").innerText = "保存完了: " + data.html_url;
+  } else {
+    document.getElementById("status").innerText = "保存エラー: " + JSON.stringify(data);
+  }
+}
+
+// 読み込み処理
+async function loadData() {
+  const gistId = document.getElementById("gistIdInput").value.trim();
+  if (!gistId) {
+    alert("Gist ID を入力してください");
+    return;
+  }
+
+  const res = await fetch(`${WORKER_URL}?gist_id=${gistId}`);
+  const data = await res.json();
+
+  if (!data.files || !data.files["data.json"]) {
+    document.getElementById("status").innerText = "読み込みエラー";
+    return;
+  }
+
+  const content = JSON.parse(data.files["data.json"].content);
+
+  applyAppData(content);
+
+  document.getElementById("status").innerText = "読み込み完了";
+}
 
 // ===== 初期化 =====
 (async () => {
