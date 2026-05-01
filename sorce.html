@@ -315,7 +315,28 @@ async function loadData() {
         }
     } catch (e) { /* 未保存 → デフォルトのまま */ }
 }
+    
 
+async function saveToGist(content) {
+  const res = await fetch("https://weathered-dream-9afgist-proxy.ogamcad.workers.dev/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      description: "STU48_tag data",
+      public: false,
+      files: {
+        "data.json": {
+          content: JSON.stringify(content, null, 2)
+        }
+      }
+    })
+  });
+
+  const data = await res.json();
+  console.log("Gist created:", data.html_url);
+  alert("保存完了！\nURL: " + data.html_url);
+}
+    
 async function saveData() {
     await window.storage.set(STORAGE_KEY, JSON.stringify(stu48Data), true);
 }
