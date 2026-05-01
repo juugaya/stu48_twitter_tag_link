@@ -1,72 +1,68 @@
-html
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>STU48 ハッシュタグ生成 & 投稿ツール</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>私のSTU48応援ページ</title>
+    <meta name="description" content="私のSNSやSTU48応援ハッシュタグ生成ツールです。">
     <style>
-        / 基本的なスタイル /
-         { box-sizing: border-box; }
+        * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
-            margin: 0; padding: 20px; background-color: f0f2f5;
-            color: 333; line-height: 1.6;
+            margin: 0; padding: 20px; background-color: #f0f2f5;
+            color: #333; line-height: 1.6;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
         .container {
-            background: fff; border-radius: 12px;
+            background: #fff; border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             padding: 30px; width: 100%; max-width: 700px; margin-bottom: 20px; text-align: center;
         }
-        h1 { color: 2c3e50; margin-bottom: 25px; font-size: 2.2em; border-bottom: 2px solid e0e0e0; padding-bottom: 15px; }
-        h2 { color: 34495e; margin-top: 30px; margin-bottom: 20px; font-size: 1.6em; }
+        h1 { color: #2c3e50; margin-bottom: 25px; font-size: 2.2em; border-bottom: 2px solid #e0e0e0; padding-bottom: 15px; }
+        h2 { color: #34495e; margin-top: 30px; margin-bottom: 20px; font-size: 1.6em; }
         p  { margin-bottom: 15px; font-size: 1.1em; }
         a.button {
-            display: inline-block; background: 2196f3; color: fff;
+            display: inline-block; background: #2196f3; color: #fff;
             padding: 14px 28px; border-radius: 30px; text-decoration: none;
             font-weight: bold; font-size: 1.2em;
             transition: background 0.3s, transform 0.2s;
             margin-top: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        a.button:hover { background: 1976d2; transform: translateY(-2px); }
-        .section-separator { width: 80%; height: 1px; background: e0e0e0; margin: 40px auto; }
-
-        / フォーム関連 /
+        a.button:hover { background: #1976d2; transform: translateY(-2px); }
+        .section-separator { width: 80%; height: 1px; background: #e0e0e0; margin: 40px auto; }
         .form-group { margin-bottom: 22px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 1.05em; color: 444; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 1.05em; color: #444; }
         .form-group select, .form-group textarea {
-            width: 100%; padding: 11px; border: 1px solid ccc; border-radius: 8px;
+            width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 8px;
             font-size: 1.05em; transition: border-color 0.3s; font-family: inherit;
         }
-        .form-group select:focus, .form-group textarea:focus { border-color: 2196f3; outline: none; }
+        .form-group select:focus, .form-group textarea:focus { border-color: #2196f3; outline: none; }
 
-        / タグチップ /
         .tag-checkboxes {
             display: flex; flex-wrap: wrap; gap: 8px;
-            padding: 12px; border: 1px solid e0e0e0; border-radius: 8px;
-            background: f8f9fa; min-height: 48px; align-items: center;
+            padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px;
+            background: #f8f9fa; min-height: 48px; align-items: center;
         }
-        .tag-placeholder { color: aaa; font-size: 0.95em; }
+        .tag-placeholder { color: #aaa; font-size: 0.95em; }
         .tag-chip {
             display: inline-flex; align-items: center; gap: 5px;
-            background: e3f2fd; border: 1.5px solid 90caf9; border-radius: 20px;
+            background: #e3f2fd; border: 1.5px solid #90caf9; border-radius: 20px;
             padding: 4px 12px 4px 8px; font-size: 0.95em; cursor: pointer;
             transition: background 0.2s, border-color 0.2s; user-select: none;
         }
-        .tag-chip input[type="checkbox"] { accent-color: 1976d2; width: 15px; height: 15px; cursor: pointer; margin: 0; }
-        .tag-chip:has(input:checked) { background: 1976d2; border-color: 1565c0; color: fff; }
+        .tag-chip input[type="checkbox"] { accent-color: #1976d2; width: 15px; height: 15px; cursor: pointer; margin: 0; }
+        .tag-chip:has(input:checked) { background: #1976d2; border-color: #1565c0; color: #fff; }
 
-        / 文字数 / プレビュー /
-        .char-count { text-align: right; font-size: 0.88em; margin-top: 4px; color: 666; }
-        .char-count.over { color: e53935; font-weight: bold; }
+        .char-count { text-align: right; font-size: 0.88em; margin-top: 4px; color: #666; }
+        .char-count.over { color: #e53935; font-weight: bold; }
         .preview-box {
-            background: f8f9fa; border: 1px solid ddd; border-radius: 8px;
+            background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px;
             padding: 12px 16px; font-size: 0.95em; white-space: pre-wrap;
             word-break: break-all; text-align: left; min-height: 44px;
         }
-        .preview-placeholder { color: aaa; }
+        .preview-placeholder { color: #aaa; }
 
-        / ボタン /
         .btn {
             display: inline-flex; align-items: center; gap: 7px;
             padding: 11px 22px; border: none; border-radius: 30px;
@@ -77,52 +73,50 @@ html
         .btn:hover:not(:disabled) { transform: translateY(-2px); }
         .btn:active { transform: none; }
         .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-        .btn-green { background: 4caf50; color: fff; }
-        .btn-green:hover:not(:disabled) { background: 43a047; }
-        .btn-black { background: 111; color: fff; }
-        .btn-black:hover:not(:disabled) { background: 333; }
-        .btn-blue  { background: 1976d2; color: fff; }
-        .btn-blue:hover:not(:disabled)  { background: 1565c0; }
-        .btn-gray  { background: eee; color: 333; border: 1px solid ccc; box-shadow: none; }
-        .btn-gray:hover:not(:disabled)  { background: ddd; }
+        .btn-green { background: #4caf50; color: #fff; }
+        .btn-green:hover:not(:disabled) { background: #43a047; }
+        .btn-black { background: #111; color: #fff; }
+        .btn-black:hover:not(:disabled) { background: #333; }
+        .btn-blue  { background: #1976d2; color: #fff; }
+        .btn-blue:hover:not(:disabled)  { background: #1565c0; }
+        .btn-gray  { background: #eee; color: #333; border: 1px solid #ccc; box-shadow: none; }
+        .btn-gray:hover:not(:disabled)  { background: #ddd; }
         .btn-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
 
-        / タブ /
-        .tab-bar { display: flex; gap: 0; border-bottom: 2px solid e0e0e0; margin-bottom: 18px; }
+        .tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 18px; }
         .tab {
             padding: 8px 20px; cursor: pointer; font-size: 0.95em; font-weight: bold;
-            color: 888; border-bottom: 3px solid transparent; margin-bottom: -2px;
+            color: #888; border-bottom: 3px solid transparent; margin-bottom: -2px;
             transition: color 0.2s;
         }
-        .tab.active { color: 1976d2; border-bottom-color: 1976d2; }
+        .tab.active { color: #1976d2; border-bottom-color: #1976d2; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        / 編集タブ /
         .edit-section-title {
-            font-size: 1.05em; font-weight: bold; color: 1565c0;
-            margin: 18px 0 6px; border-left: 3px solid 1976d2; padding-left: 8px; text-align: left;
+            font-size: 1.05em; font-weight: bold; color: #1565c0;
+            margin: 18px 0 6px; border-left: 3px solid #1976d2; padding-left: 8px; text-align: left;
         }
-        .hint { font-size: 0.82em; color: 888; margin-bottom: 10px; text-align: left; }
+        .hint { font-size: 0.82em; color: #888; margin-bottom: 10px; text-align: left; }
         .member-edit-row {
             display: flex; align-items: flex-start; gap: 8px;
-            border: 1px solid e0e0e0; border-radius: 8px; padding: 10px 12px;
-            margin-bottom: 8px; background: fafafa;
+            border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 12px;
+            margin-bottom: 8px; background: #fafafa;
         }
         .member-name { font-weight: bold; min-width: 90px; padding-top: 5px; font-size: 0.95em; text-align: left; }
         .member-edit-row textarea {
-            flex: 1; padding: 6px 10px; border: 1px solid ccc; border-radius: 6px;
+            flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px;
             font-size: 0.92em; resize: vertical; min-height: 36px; font-family: inherit;
             transition: border-color 0.2s;
         }
-        .member-edit-row textarea:focus { border-color: 1976d2; outline: none; }
-        .member-edit-row textarea.error { border-color: e53935; }
+        .member-edit-row textarea:focus { border-color: #1976d2; outline: none; }
+        .member-edit-row textarea.error { border-color: #e53935; }
         .status-msg { font-size: 0.9em; margin-top: 8px; min-height: 20px; text-align: center; }
-        .status-msg.ok  { color: 388e3c; }
-        .status-msg.err { color: e53935; }
-        .loading { text-align: center; color: 888; padding: 16px; font-size: 0.95em; }
+        .status-msg.ok  { color: #388e3c; }
+        .status-msg.err { color: #e53935; }
+        .loading { text-align: center; color: #888; padding: 16px; font-size: 0.95em; }
         .alert-banner {
-            font-size: 0.88em; color: e65100; background: fff3e0;
+            font-size: 0.88em; color: #e65100; background: #fff3e0;
             border-radius: 6px; padding: 6px 12px; display: inline-block; margin-bottom: 10px;
         }
 
@@ -135,6 +129,7 @@ html
     </style>
 </head>
 <body>
+<div class="section-separator"></div>
 
 <div class="container">
     <h2>STU48 ハッシュタグ生成 &amp; 投稿ツール</h2>
@@ -145,7 +140,6 @@ html
         <div class="tab" data-tab="edit">✏️ タグ編集</div>
     </div>
 
-    <!-- 投稿タブ -->
     <div class="tab-content active" id="tab-post">
         <div class="form-group">
             <label for="generationSelect">期生を選択してください:</label>
@@ -181,15 +175,14 @@ html
             <div class="preview-box" id="previewBox"><span class="preview-placeholder">（プレビューなし）</span></div>
         </div>
         <div class="btn-row">
-            <button id="copyButton" class="btn btn-green">📋 タグをコピー</button>
-            <button id="tweetButton" class="btn btn-black" disabled>
+            <button id="copyButton" class="btn btn-green" type="button">📋 タグをコピー</button>
+            <button id="tweetButton" class="btn btn-black" type="button" disabled>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
                 Xに投稿する
             </button>
         </div>
     </div>
 
-    <!-- 編集タブ -->
     <div class="tab-content" id="tab-edit">
         <div id="editLoading" class="loading">📡 データを読み込み中…</div>
         <div id="editContent" style="display:none;">
@@ -207,109 +200,84 @@ html
             </div>
             <div id="memberEditList"></div>
             <div class="btn-row" id="editButtons" style="display:none;">
-                <button id="saveTagsBtn" class="btn btn-blue">💾 保存する</button>
-                <button id="resetTagsBtn" class="btn btn-gray">↩ 初期値に戻す</button>
+                <button id="saveTagsBtn" class="btn btn-blue" type="button">💾 保存する</button>
+                <button id="resetTagsBtn" class="btn btn-gray" type="button">↩ 初期値に戻す</button>
             </div>
             <div class="status-msg" id="saveStatus"></div>
         </div>
     </div>
 </div>
 
-<footer style="margin-top:auto;padding:20px;color:777;font-size:0.9em;text-align:center;">
+<footer style="margin-top:auto;padding:20px;color:#777;font-size:0.9em;text-align:center;">
     <p>&copy; 2023 My STU48 Fan Page. All rights reserved.</p>
 </footer>
 
 <script>
-// ===== デフォルトデータ =====
-const DEFAULTDATA = {
+const DEFAULT_DATA = {
     '1st': [
-        { name: '石田千穂',   hashtags: ['石田千穂', 'ちほ'] },
-        { name: '甲斐心愛',   hashtags: ['甲斐心愛', 'ここあ'] },
-        { name: '谷口茉妃菜', hashtags: ['谷口茉妃菜', 'まひちゃん'] },
-        { name: '兵頭葵',     hashtags: ['兵頭葵', 'あおい'] },
-        { name: '福田朱里',   hashtags: ['福田朱里', 'ふくちゃん'] }
+        { name: '石田千穂',   hashtags: ['#石田千穂', '#ちほ'] },
+        { name: '甲斐心愛',   hashtags: ['#甲斐心愛', '#ここあ'] },
+        { name: '谷口茉妃菜', hashtags: ['#谷口茉妃菜', '#まひちゃん'] },
+        { name: '兵頭葵',     hashtags: ['#兵頭葵', '#あおい'] },
+        { name: '福田朱里',   hashtags: ['#福田朱里', '#ふくちゃん'] }
     ],
     'draft3rd': [
-        { name: '信濃宙花', hashtags: ['信濃宙花', 'そらは'] },
-        { name: '中村舞',   hashtags: ['中村舞', '舞Q'] }
+        { name: '信濃宙花', hashtags: ['#信濃宙花', '#そらは'] },
+        { name: '中村舞',   hashtags: ['#中村舞', '#舞Q'] }
     ],
     '2nd': [
-        { name: '池田裕楽',   hashtags: ['池田裕楽', '池ちゃん'] },
-        { name: '内海里音',   hashtags: ['内海里音', 'りねたん'] },
-        { name: '尾崎世里花', hashtags: ['尾崎世里花', 'ぱせり'] },
-        { name: '川又優菜',   hashtags: ['川又優菜', 'ゆなゆな'] },
-        { name: '工藤理子',   hashtags: ['工藤理子', 'りこち'] },
-        { name: '迫姫華',     hashtags: ['迫姫華', 'ひめたん'] },
-        { name: '清水紗良',   hashtags: ['清水紗良', 'しみさら'] },
-        { name: '高雄さやか', hashtags: ['高雄さやか', 'さーやん'] },
-        { name: '原田清花',   hashtags: ['原田清花', 'さやかりん'] },
-        { name: '宗雪里香',   hashtags: ['宗雪里香', 'ゆきりか'] },
-        { name: '吉田彩良',   hashtags: ['吉田彩良', 'さらぴ'] },
-        { name: '渡辺菜月',   hashtags: ['渡辺菜月', 'なっちゃん'] }
+        { name: '池田裕楽',   hashtags: ['#池田裕楽', '#池ちゃん'] },
+        { name: '内海里音',   hashtags: ['#内海里音', '#りねたん'] },
+        { name: '尾崎世里花', hashtags: ['#尾崎世里花', '#ぱせり'] },
+        { name: '川又優菜',   hashtags: ['#川又優菜', '#ゆなゆな'] },
+        { name: '工藤理子',   hashtags: ['#工藤理子', '#りこち'] },
+        { name: '迫姫華',     hashtags: ['#迫姫華', '#ひめたん'] },
+        { name: '清水紗良',   hashtags: ['#清水紗良', '#しみさら'] },
+        { name: '高雄さやか', hashtags: ['#高雄さやか', '#さーやん'] },
+        { name: '原田清花',   hashtags: ['#原田清花', '#さやかりん'] },
+        { name: '宗雪里香',   hashtags: ['#宗雪里香', '#ゆきりか'] },
+        { name: '吉田彩良',   hashtags: ['#吉田彩良', '#さらぴ'] },
+        { name: '渡辺菜月',   hashtags: ['#渡辺菜月', '#なっちゃん'] }
     ],
     '2.5th': [
-        { name: '岡田あずみ', hashtags: ['岡田あずみ', 'あずみん'] },
-        { name: '岡村梨央',   hashtags: ['岡村梨央', 'りおつん'] },
-        { name: '久留島優果', hashtags: ['久留島優果', 'くるくる'] },
-        { name: '諸葛望愛',   hashtags: ['諸葛望愛', 'のあぴ'] }
+        { name: '岡田あずみ', hashtags: ['#岡田あずみ', '#あずみん'] },
+        { name: '岡村梨央',   hashtags: ['#岡村梨央', '#りおつん'] },
+        { name: '久留島優果', hashtags: ['#久留島優果', '#くるくる'] },
+        { name: '諸葛望愛',   hashtags: ['#諸葛望愛', '#のあぴ'] }
     ],
     '3rd': [
-        { name: '新井梨杏', hashtags: ['新井梨杏', 'りあちゅう'] },
-        { name: '石原侑奈', hashtags: ['石原侑奈', 'ゆーなん'] },
-        { name: '奥田唯菜', hashtags: ['奥田唯菜', 'ゆいにゃん'] },
-        { name: '北澤苺',   hashtags: ['北澤苺', 'いちご'] },
-        { name: '濵田響',   hashtags: ['濵田響', 'ひびき'] },
-        { name: '森末妃奈', hashtags: ['森末妃奈', 'ひーたん'] }
+        { name: '新井梨杏', hashtags: ['#新井梨杏', '#りあちゅう'] },
+        { name: '石原侑奈', hashtags: ['#石原侑奈', '#ゆーなん'] },
+        { name: '奥田唯菜', hashtags: ['#奥田唯菜', '#ゆいにゃん'] },
+        { name: '北澤苺',   hashtags: ['#北澤苺', '#いちご'] },
+        { name: '濵田響',   hashtags: ['#濵田響', '#ひびき'] },
+        { name: '森末妃奈', hashtags: ['#森末妃奈', '#ひーたん'] }
     ],
     '4th': [
-        { name: '石松陽菜',   hashtags: ['石松陽菜', 'はるちゃん'] },
-        { name: '井上久伶杏', hashtags: ['井上久伶杏', 'くれちゃん'] },
-        { name: '蕪竹真奈',   hashtags: ['蕪竹真奈', 'かぶちゃん'] },
-        { name: '木原姫花世', hashtags: ['木原姫花世', 'ヒナピー'] },
-        { name: '小松奈侑',   hashtags: ['小松奈侑', 'なゆゆ'] },
-        { name: '坂木叶愛',   hashtags: ['坂木叶愛', 'とわわ'] },
-        { name: '坂崎愛',     hashtags: ['坂崎愛', 'さかあい'] },
-        { name: '島田紗香',   hashtags: ['島田紗香', 'さやたん'] },
-        { name: '曽我部あこ', hashtags: ['曽我部あこ', 'あこ'] },
-        { name: '髙村栞里',   hashtags: ['髙村栞里', 'しおりん'] },
-        { name: '田中奈菜子', hashtags: ['田中奈菜子', 'ななちゃん'] },
-        { name: '道保琉南',   hashtags: ['道保琉南', 'るなち'] },
-        { name: '野中莉央',   hashtags: ['野中莉央', 'りおちー'] },
-        { name: '濵田美惟',   hashtags: ['濵田美惟', 'みーにゃ'] },
-        { name: '藤田愛結',   hashtags: ['藤田愛結', 'あむにゃ'] },
-        { name: '三好真綺',   hashtags: ['三好真綺', 'まあにゃ'] },
-        { name: '屋木優菜',   hashtags: ['屋木優菜', 'うなちい'] },
-        { name: '横井結菜',   hashtags: ['横井結菜', 'よこゆい'] }
+        { name: '石松陽菜',   hashtags: ['#石松陽菜', '#はるちゃん'] },
+        { name: '井上久伶杏', hashtags: ['#井上久伶杏', '#くれちゃん'] },
+        { name: '蕪竹真奈',   hashtags: ['#蕪竹真奈', '#かぶちゃん'] },
+        { name: '木原姫花世', hashtags: ['#木原姫花世', '#ヒナピー'] },
+        { name: '小松奈侑',   hashtags: ['#小松奈侑', '#なゆゆ'] },
+        { name: '坂木叶愛',   hashtags: ['#坂木叶愛', '#とわわ'] },
+        { name: '坂崎愛',     hashtags: ['#坂崎愛', '#さかあい'] },
+        { name: '島田紗香',   hashtags: ['#島田紗香', '#さやたん'] },
+        { name: '曽我部あこ', hashtags: ['#曽我部あこ', '#あこ'] },
+        { name: '髙村栞里',   hashtags: ['#髙村栞里', '#しおりん'] },
+        { name: '田中奈菜子', hashtags: ['#田中奈菜子', '#ななちゃん'] },
+        { name: '道保琉南',   hashtags: ['#道保琉南', '#るなち'] },
+        { name: '野中莉央',   hashtags: ['#野中莉央', '#りおちー'] },
+        { name: '濵田美惟',   hashtags: ['#濵田美惟', '#みーにゃ'] },
+        { name: '藤田愛結',   hashtags: ['#藤田愛結', '#あむにゃ'] },
+        { name: '三好真綺',   hashtags: ['#三好真綺', '#まあにゃ'] },
+        { name: '屋木優菜',   hashtags: ['#屋木優菜', '#うなちい'] },
+        { name: '横井結菜',   hashtags: ['#横井結菜', '#よこゆい'] }
     ]
 };
 
-const STORAGEKEY = 'stu48-hashtag-data-v1';
-let stu48Data = JSON.parse(JSON.stringify(DEFAULTDATA)); // Deep copy
+const STORAGE_KEY = 'stu48-hashtag-data-v1';
+let stu48Data = JSON.parse(JSON.stringify(DEFAULT_DATA));
 
-// ===== ストレージ =====
-async function loadData() {
-    // GitHub Gistとの連携部分は、提供されたコードには含まれていないため、
-    // ここではローカルストレージからの読み込み、またはデフォルト値を使用する想定で実装します。
-    // 実際のGist連携は、別途 saveData と loadData 関数内で実装する必要があります。
-
-    // 例：ローカルストレージから読み込む場合
-    const storedData = localStorage.getItem(STORAGEKEY);
-    if (storedData) {
-        try {
-            const parsed = JSON.parse(storedData);
-            for (const gen of Object.keys(DEFAULTDATA)) {
-                if (parsed[gen] && Array.isArray(parsed[gen])) {
-                    stu48Data[gen] = parsed[gen];
-                }
-            }
-        } catch (e) {
-            console.error("ローカルストレージからのデータ読み込みエラー:", e);
-            // エラー時はデフォルトデータを使用
-        }
-    }
-}
-
-// ===== 投稿タブ =====
 const generationSelect = document.getElementById('generationSelect');
 const memberSelect     = document.getElementById('memberSelect');
 const tagCheckboxes    = document.getElementById('tagCheckboxes');
@@ -319,54 +287,99 @@ const previewBox       = document.getElementById('previewBox');
 const copyButton       = document.getElementById('copyButton');
 const tweetButton      = document.getElementById('tweetButton');
 
-const GENTAG = {
-    '1st':'STU481期生','draft3rd':'STU48ドラフト3期生',
-    '2nd':'STU482期生','2.5th':'STU4825期生',
-    '3rd':'STU483期生','4th':'STU484期生'
+const editGenSelect  = document.getElementById('editGenSelect');
+const memberEditList = document.getElementById('memberEditList');
+const editButtons    = document.getElementById('editButtons');
+const saveTagsBtn    = document.getElementById('saveTagsBtn');
+const resetTagsBtn   = document.getElementById('resetTagsBtn');
+const saveStatus     = document.getElementById('saveStatus');
+
+const GEN_TAG = {
+    '1st': '#STU48_1期生',
+    'draft3rd': '#STU48_ドラフト3期生',
+    '2nd': '#STU48_2期生',
+    '2.5th': '#STU48_2_5期生',
+    '3rd': '#STU48_3期生',
+    '4th': '#STU48_4期生'
 };
+
+async function loadData() {
+    try {
+        let stored = null;
+        if (window.storage && typeof window.storage.get === 'function') {
+            const result = await window.storage.get(STORAGE_KEY, true);
+            stored = result?.value ?? null;
+        } else if (typeof localStorage !== 'undefined') {
+            stored = localStorage.getItem(STORAGE_KEY);
+        }
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            for (const gen of Object.keys(DEFAULT_DATA)) {
+                if (Array.isArray(parsed[gen])) {
+                    stu48Data[gen] = parsed[gen];
+                }
+            }
+        }
+    } catch (error) {
+        console.warn('データ読み込みに失敗しました:', error);
+    }
+}
+
+async function saveData() {
+    const serialized = JSON.stringify(stu48Data);
+    if (window.storage && typeof window.storage.set === 'function') {
+        await window.storage.set(STORAGE_KEY, serialized, true);
+    } else if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, serialized);
+    }
+}
 
 function getCandidateTags() {
     const gen = generationSelect.value;
-    const mem = memberSelect.value;
-    let tags = ['STU48'];
+    const member = memberSelect.value;
+    const tags = ['#STU48'];
     if (gen) {
-        if (GENTAG[gen]) tags.push(GENTAG[gen]);
-        if (mem) {
-            const found = stu48Data[gen]?.find(m => m.name === mem);
-            if (found) tags = tags.concat(found.hashtags);
+        if (GEN_TAG[gen]) tags.push(GEN_TAG[gen]);
+        if (member) {
+            const found = stu48Data[gen]?.find(item => item.name === member);
+            if (found) tags.push(...found.hashtags);
         }
     }
-    return [...new Set(tags)]; // 重複を削除
+    return [...new Set(tags)];
 }
 
 function renderTagCheckboxes(tags) {
     tagCheckboxes.innerHTML = '';
-    if (!tags || tags.length === 0) {
+    if (!tags.length) {
         tagCheckboxes.innerHTML = '<span class="tag-placeholder">期生・メンバーを選択するとタグが表示されます</span>';
-    } else {
-        tags.forEach(tag => {
-            const chip = document.createElement('label');
-            chip.className = 'tag-chip';
-            const cb = document.createElement('input');
-            cb.type = 'checkbox'; cb.value = tag; cb.checked = true;
-            cb.addEventListener('change', updatePreview);
-            const span = document.createElement('span');
-            span.textContent = tag;
-            chip.appendChild(cb); chip.appendChild(span);
-            tagCheckboxes.appendChild(chip);
-        });
+        return;
     }
-    updatePreview(); // タグがレンダリングされたらプレビューも更新
+    tags.forEach(tag => {
+        const chip = document.createElement('label');
+        chip.className = 'tag-chip';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = tag;
+        cb.checked = true;
+        cb.addEventListener('change', updatePreview);
+        const span = document.createElement('span');
+        span.textContent = tag;
+        chip.append(cb, span);
+        tagCheckboxes.appendChild(chip);
+    });
+    updatePreview();
 }
 
 function getSelectedTags() {
-    return [...tagCheckboxes.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+    return [...tagCheckboxes.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value);
 }
 
 function buildPostText() {
     const body = postBody.value.trim();
     const tags = getSelectedTags().join(' ');
-    if (body && tags) return body + '\n' + tags;
+    if (body && tags) {
+        return `${body}\n${tags}`;
+    }
     return body || tags;
 }
 
@@ -377,64 +390,34 @@ function updatePreview() {
     } else {
         previewBox.innerHTML = '<span class="preview-placeholder">（プレビューなし）</span>';
     }
-    const len = [...text].length; // 文字数を正しくカウント
-    charCount.textContent = ${len} / 140文字;
-    charCount.classList.toggle('over', len > 140);
-    tweetButton.disabled = len > 140 || len === 0;
+    const length = [...text].length;
+    charCount.textContent = `${length} / 140文字`;
+    charCount.classList.toggle('over', length > 140);
+    tweetButton.disabled = length === 0 || length > 140;
 }
 
 function rebuildMemberSelect(gen) {
     memberSelect.innerHTML = '<option value="">メンバーを選択</option>';
     memberSelect.disabled = true;
-    if (gen && stu48Data[gen]) {
-        stu48Data[gen].forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.name; opt.textContent = m.name;
-            memberSelect.appendChild(opt);
-        });
-        memberSelect.disabled = false;
+    if (!gen || !stu48Data[gen]) {
+        return;
     }
+    stu48Data[gen].forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.name;
+        option.textContent = member.name;
+        memberSelect.appendChild(option);
+    });
+    memberSelect.disabled = false;
 }
-
-generationSelect.addEventListener('change', () => {
-    rebuildMemberSelect(generationSelect.value);
-    renderTagCheckboxes(getCandidateTags());
-});
-memberSelect.addEventListener('change', () => renderTagCheckboxes(getCandidateTags()));
-postBody.addEventListener('input', updatePreview);
-
-copyButton.addEventListener('click', () => {
-    const tags = getSelectedTags().join(' ');
-    if (!tags) { alert('選択されたタグがありません。'); return; }
-    try {
-        navigator.clipboard.writeText(tags);
-    } catch {
-        // 古いブラウザ向けのフォールバック
-        const tmp = document.createElement('textarea');
-        tmp.value = tags; document.body.appendChild(tmp);
-        tmp.select(); document.execCommand('copy'); document.body.removeChild(tmp);
-    }
-    alert('タグをコピーしました！');
-});
-
-tweetButton.addEventListener('click', () => {
-    const text = buildPostText();
-    if (!text) return;
-    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), 'blank', 'noopener,noreferrer');
-});
-
-// ===== 編集タブ =====
-const editGenSelect  = document.getElementById('editGenSelect');
-const memberEditList = document.getElementById('memberEditList');
-const editButtons    = document.getElementById('editButtons');
-const saveTagsBtn    = document.getElementById('saveTagsBtn');
-const resetTagsBtn   = document.getElementById('resetTagsBtn');
-const saveStatus     = document.getElementById('saveStatus');
 
 function renderEditList(gen) {
     memberEditList.innerHTML = '';
     saveStatus.textContent = '';
-    if (!gen || !stu48Data[gen]) { editButtons.style.display = 'none'; return; }
+    editButtons.style.display = 'none';
+    if (!gen || !stu48Data[gen]) {
+        return;
+    }
 
     const title = document.createElement('div');
     title.className = 'edit-section-title';
@@ -443,10 +426,10 @@ function renderEditList(gen) {
 
     const hint = document.createElement('div');
     hint.className = 'hint';
-    hint.textContent = ' を含めてスペース区切りで入力　例: 石田千穂 ちほ　※変更は「保存する」を押すと全員に反映されます';
+    hint.textContent = '# を含めてスペース区切りで入力　例: #石田千穂 #ちほ';
     memberEditList.appendChild(hint);
 
-    stu48Data[gen].forEach((member, idx) => {
+    stu48Data[gen].forEach((member, index) => {
         const row = document.createElement('div');
         row.className = 'member-edit-row';
 
@@ -454,257 +437,152 @@ function renderEditList(gen) {
         nameEl.className = 'member-name';
         nameEl.textContent = member.name;
 
-        const ta = document.createElement('textarea');
-        ta.value = member.hashtags.join(' ');
-        ta.rows = 2;
-        ta.dataset.idx = idx;
-        ta.placeholder = 'タグ1 タグ2';
+        const textArea = document.createElement('textarea');
+        textArea.rows = 2;
+        textArea.value = member.hashtags.join(' ');
+        textArea.dataset.index = index.toString();
+        textArea.placeholder = '#タグ1 #タグ2';
 
-        row.appendChild(nameEl);
-        row.appendChild(ta);
+        row.append(nameEl, textArea);
         memberEditList.appendChild(row);
     });
 
     editButtons.style.display = 'flex';
 }
 
-editGenSelect.addEventListener('change', () => renderEditList(editGenSelect.value));
+function setStatus(message, type) {
+    saveStatus.textContent = message;
+    saveStatus.className = `status-msg ${type}`;
+    if (type === 'ok') {
+        setTimeout(() => {
+            saveStatus.textContent = '';
+            saveStatus.className = 'status-msg';
+        }, 4000);
+    }
+}
 
-saveTagsBtn.addEventListener('click', async () => {
-    const gen = editGenSelect.value;
-    if (!gen) return;
-
-    const textareas = memberEditList.querySelectorAll('textarea[data-idx]');
-    let hasError = false;
-    const updatedTagsForGen = [];
-
-    textareas.forEach(ta => {
-        const tags = ta.value.trim().split(/\s+/).filter(t => t.length > 0);
-        const invalid = tags.filter(t => !t.startsWith(''));
-        ta.classList.toggle('error', invalid.length > 0);
-        if (invalid.length > 0) {
-            hasError = true;
-        } else {
-            updatedTagsForGen[parseInt(ta.dataset.idx)] = tags.length ? tags : [];
-        }
+document.addEventListener('DOMContentLoaded', async () => {
+    generationSelect.addEventListener('change', () => {
+        rebuildMemberSelect(generationSelect.value);
+        renderTagCheckboxes(getCandidateTags());
     });
 
-    if (hasError) {
-        setStatus('⚠️  で始まらないタグがあります（赤枠の欄を確認）', 'err');
-        return;
-    }
+    memberSelect.addEventListener('change', () => renderTagCheckboxes(getCandidateTags()));
+    postBody.addEventListener('input', updatePreview);
 
-    // エラーがなければ、stu48Data を更新
-    stu48Data[gen] = updatedTagsForGen;
-
-    try {
-        setStatus('💾 保存中…', '');
-        await saveData(); // 保存処理を実行
-        setStatus('✅ 保存しました！みんなに反映されます。', 'ok');
-        // 投稿タブにも即時反映
-        const curGen = generationSelect.value;
-        if (curGen === gen) {
-            const curMem = memberSelect.value;
-            rebuildMemberSelect(gen);
-            memberSelect.value = curMem;
-            renderTagCheckboxes(getCandidateTags());
+    copyButton.addEventListener('click', async () => {
+        const tags = getSelectedTags().join(' ');
+        if (!tags) {
+            alert('選択されたタグがありません。');
+            return;
         }
-    } catch (e) {
-        setStatus('❌ 保存に失敗しました。', 'err');
-        console.error("保存エラー:", e);
-    }
-});
-
-resetTagsBtn.addEventListener('click', async () => {
-    const gen = editGenSelect.value;
-    if (!gen) return;
-    const label = editGenSelect.options[editGenSelect.selectedIndex].text;
-    if (!confirm(「${label}」のタグを初期値に戻しますか？\nこの操作は全員に反映されます。)) return;
-
-    // デフォルトデータを対象の期生にリセット
-    stu48Data[gen] = JSON.parse(JSON.stringify(DEFAULTDATA[gen]));
-
-    try {
-        await saveData(); // 保存処理を実行
-        renderEditList(gen); // 編集リストを再描画
-        setStatus('✅ 初期値に戻しました。', 'ok');
-    } catch (e) {
-        setStatus('❌ 保存に失敗しました。', 'err');
-        console.error("リセット保存エラー:", e);
-    }
-});
-
-function setStatus(msg, type) {
-    saveStatus.textContent = msg;
-    saveStatus.className = 'status-msg ' + type;
-    if (type === 'ok') setTimeout(() => { saveStatus.textContent = ''; saveStatus.className = 'status-msg'; }, 4000);
-}
-
-// ===== タブ切り替え =====
-let editInitialized = false;
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-
-        if (tab.dataset.tab === 'edit' && !editInitialized) {
-            editInitialized = true;
-            document.getElementById('editLoading').style.display = 'none';
-            document.getElementById('editContent').style.display = 'block';
-        }
-    });
-});
-
-// ===== GitHub Gist連携 =====
-const WORKERURL = "https://worker.example.com/gist-proxy"; // 仮のWorker URL
-const GISTIDINPUT = document.getElementById("gistIdInput");
-const STATUSDISPLAY = document.getElementById("status");
-
-// データの収集（投稿タブと編集タブの状態をまとめる）
-function collectAppData() {
-  const currentTagsData = {};
-  for (const gen in stu48Data) {
-      currentTagsData[gen] = stu48Data[gen].map(member => ({
-          name: member.name,
-          hashtags: member.hashtags
-      }));
-  }
-
-  // 投稿タブの選択状態も保存したい場合はここに追加
-  // 例:
-  // const selectedMember = memberSelect.value;
-  // const selectedGeneration = generationSelect.value;
-
-  return {
-    tags: currentTagsData,
-    // selectedMember: selectedMember,
-    // selectedGeneration: selectedGeneration,
-  };
-}
-
-// Gistから読み込んだデータを適用
-function applyAppData(content) {
-  if (!content || !content.tags) {
-      console.error("無効なデータ形式です。");
-      return;
-  }
-  for (const gen in DEFAULTDATA) {
-      if (content.tags[gen] && Array.isArray(content.tags[gen])) {
-          stu48Data[gen] = content.tags[gen];
-      } else {
-          // データがない場合はデフォルトに戻す
-          stu48Data[gen] = JSON.parse(JSON.stringify(DEFAULTDATA[gen]));
-      }
-  }
-
-  // 投稿タブのUIを更新
-  rebuildMemberSelect(generationSelect.value); // メンバーリストを再構築
-  renderTagCheckboxes(getCandidateTags()); // タグ表示を更新
-  updatePreview(); // プレビューを更新
-
-  // 編集タブのUIを更新
-  if (editInitialized) { // 編集タブが一度表示されている場合のみ更新
-      renderEditList(editGenSelect.value);
-  }
-
-  // 読み込み完了メッセージ
-  STATUSDISPLAY.innerText = "読み込み完了";
-}
-
-
-// 保存処理（新規 or 更新）
-async function saveData() {
-  const gistId = GISTIDINPUT.value.trim();
-
-  const content = collectAppData();
-
-  const payload = {
-    method: gistId ? "update" : "create",
-    gistid: gistId || undefined,
-    files: {
-      "data.json": {
-        content: JSON.stringify(content, null, 2)
-      }
-    }
-  };
-
-  try {
-      const res = await fetch(WORKERURL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-
-      if (data.id) {
-          GISTIDINPUT.value = data.id;
-          STATUSDISPLAY.innerText = 保存完了: ${data.htmlurl};
-          // ローカルストレージにも保存（バックアップとして）
-          localStorage.setItem(STORAGEKEY, JSON.stringify(content));
-          return data.id; // 保存されたGist IDを返す
-      } else {
-          STATUSDISPLAY.innerText = 保存エラー: ${JSON.stringify(data)};
-          throw new Error("Gist保存に失敗しました。");
-      }
-  } catch (error) {
-      console.error("保存処理エラー:", error);
-      STATUSDISPLAY.innerText = 保存エラー: ${error.message};
-      throw error; // エラーを再スローして呼び出し元でハンドリングできるようにする
-  }
-}
-
-// 読み込み処理
-async function loadData() {
-  const gistId = GISTIDINPUT.value.trim();
-  if (!gistId) {
-    // Gist IDが入力されていない場合は、ローカルストレージから読み込むか、デフォルト値を使用
-    const storedData = localStorage.getItem(STORAGEKEY);
-    if (storedData) {
         try {
-            const content = JSON.parse(storedData);
-            applyAppData(content);
-            STATUSDISPLAY.innerText = "ローカルストレージから読み込みました";
-        } catch (e) {
-            console.error("ローカルストレージ読み込みエラー:", e);
-            STATUSDISPLAY.innerText = "ローカルストレージ読み込みエラー";
+            await navigator.clipboard.writeText(tags);
+        } catch {
+            const temp = document.createElement('textarea');
+            temp.value = tags;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
         }
-    } else {
-        // ローカルストレージにもデータがない場合はデフォルト値で初期化
-        stu48Data = JSON.parse(JSON.stringify(DEFAULTDATA));
-        STATUSDISPLAY.innerText = "デフォルトデータをロードしました";
-    }
-    // Gist ID入力欄をクリア（新規作成を促すため）
-    GISTIDINPUT.value = "";
-    return;
-  }
+        alert('タグをコピーしました！');
+    });
 
-  // Gist IDがある場合
-  try {
-      const res = await fetch(${WORKERURL}?gistid=${gistId});
-      const data = await res.json();
+    tweetButton.addEventListener('click', () => {
+        const text = buildPostText();
+        if (!text) return;
+        window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
+    });
 
-      if (!data.files || !data.files["data.json"]) {
-          STATUSDISPLAY.innerText = "読み込みエラー: data.json が見つかりません";
-          return;
-      }
+    editGenSelect.addEventListener('change', () => renderEditList(editGenSelect.value));
 
-      const content = JSON.parse(data.files["data.json"].content);
-      applyAppData(content);
-      STATUSDISPLAY.innerText = "Gistから読み込み完了";
-  } catch (error) {
-      console.error("Gist読み込みエラー:", error);
-      STATUSDISPLAY.innerText = 読み込みエラー: ${error.message};
-  }
-}
+    saveTagsBtn.addEventListener('click', async () => {
+        const gen = editGenSelect.value;
+        if (!gen) return;
 
-// ===== 初期化 =====
-(async () => {
-    await loadData(); // ページロード時にデータを読み込む
-    renderTagCheckboxes([]); // 初期状態ではタグは空
-})();
+        const textareas = memberEditList.querySelectorAll('textarea[data-index]');
+        let hasInvalid = false;
+
+        textareas.forEach(textArea => {
+            const tags = textArea.value.trim().split(/\s+/).filter(tag => tag.length > 0);
+            const invalid = tags.filter(tag => !tag.startsWith('#'));
+            textArea.classList.toggle('error', invalid.length > 0);
+
+            if (invalid.length > 0) {
+                hasInvalid = true;
+            } else {
+                const index = Number(textArea.dataset.index);
+                stu48Data[gen][index].hashtags = tags;
+            }
+        });
+
+        if (hasInvalid) {
+            setStatus('⚠️ # で始まらないタグがあります（赤枠の欄を確認）', 'err');
+            return;
+        }
+
+        try {
+            setStatus('💾 保存中…', '');
+            await saveData();
+            setStatus('✅ 保存しました！みんなに反映されます。', 'ok');
+
+            if (generationSelect.value === gen) {
+                const selectedMember = memberSelect.value;
+                rebuildMemberSelect(gen);
+                memberSelect.value = selectedMember;
+                renderTagCheckboxes(getCandidateTags());
+            }
+        } catch (error) {
+            console.error(error);
+            setStatus('❌ 保存に失敗しました。', 'err');
+        }
+    });
+
+    resetTagsBtn.addEventListener('click', async () => {
+        const gen = editGenSelect.value;
+        if (!gen) return;
+
+        const label = editGenSelect.options[editGenSelect.selectedIndex].text;
+        if (!confirm(`「${label}」のタグを初期値に戻しますか？\nこの操作は全員に反映されます。`)) {
+            return;
+        }
+
+        stu48Data[gen] = JSON.parse(JSON.stringify(DEFAULT_DATA[gen]));
+
+        try {
+            await saveData();
+            renderEditList(gen);
+            setStatus('✅ 初期値に戻しました。', 'ok');
+            if (generationSelect.value === gen) {
+                const selectedMember = memberSelect.value;
+                rebuildMemberSelect(gen);
+                memberSelect.value = selectedMember;
+                renderTagCheckboxes(getCandidateTags());
+            }
+        } catch (error) {
+            console.error(error);
+            setStatus('❌ 保存に失敗しました。', 'err');
+        }
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+
+            if (tab.dataset.tab === 'edit') {
+                document.getElementById('editLoading').style.display = 'none';
+                document.getElementById('editContent').style.display = 'block';
+            }
+        });
+    });
+
+    await loadData();
+    renderTagCheckboxes([]);
+});
 </script>
 </body>
 </html>
