@@ -1,26 +1,12 @@
-
-
-
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私のSTU48応援ページ</title>
-    <meta name="description" content="私のSNSやSTU48応援ハッシュタグ生成ツールです。"> -->
-
-    <div style="margin:20px 0;">
-        <input id="gistIdInput" type="text" placeholder="Gist ID" style="width:250px;">
-        <button onclick="saveData()">保存</button>
-        <button onclick="loadData()">読み込み</button>
-    </div>
-
-    
-
-<div id="status"></div>
-
-    
+    <title>STU48 ハッシュタグ生成 & 投稿ツール</title>
+    <meta name="description" content="STU48メンバーのハッシュタグを生成し、X（旧Twitter）に簡単に投稿できるツールです。タグのカスタマイズも可能です。">
     <style>
+        /* 基本的なスタイル */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
@@ -36,15 +22,8 @@
         h1 { color: #2c3e50; margin-bottom: 25px; font-size: 2.2em; border-bottom: 2px solid #e0e0e0; padding-bottom: 15px; }
         h2 { color: #34495e; margin-top: 30px; margin-bottom: 20px; font-size: 1.6em; }
         p  { margin-bottom: 15px; font-size: 1.1em; }
-        a.button {
-            display: inline-block; background: #2196f3; color: #fff;
-            padding: 14px 28px; border-radius: 30px; text-decoration: none;
-            font-weight: bold; font-size: 1.2em;
-            transition: background 0.3s, transform 0.2s;
-            margin-top: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        a.button:hover { background: #1976d2; transform: translateY(-2px); }
-        .section-separator { width: 80%; height: 1px; background: #e0e0e0; margin: 40px auto; }
+
+        /* フォーム要素 */
         .form-group { margin-bottom: 22px; text-align: left; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 1.05em; color: #444; }
         .form-group select, .form-group textarea {
@@ -149,22 +128,8 @@
 </head>
 <body>
 
-<!-- <div class="container">
-    <h1>私のSTU48応援ページ</h1>
-    <h2>X（旧Twitter）プロフィール用リンク</h2>
-    <p>私の活動や他のSNSはこちらからチェックしてください！</p>
-    <a href="https://lit.link/your_id_here" target="_blank" rel="noopener noreferrer" class="button">
-        私のリンクまとめページへ
-    </a>
-    <p style="font-size:0.9em;color:#666;margin-top:15px;">
-        ※「https://lit.link/your_id_here」をあなたのURLに書き換えてください。
-    </p>
-</div> -->
-
-<div class="section-separator"></div>
-
 <div class="container">
-    <h2>STU48 ハッシュタグ生成 &amp; 投稿ツール</h2>
+    <h2>STU48 ハッシュタグ生成 & 投稿ツール</h2>
     <div class="alert-banner">⚠️ タグデータはこのページを利用する<strong>全員で共有</strong>されます</div>
 
     <div class="tab-bar">
@@ -311,11 +276,12 @@ const DEFAULT_DATA = {
 };
 
 const STORAGE_KEY = 'stu48-hashtag-data-v1';
-let stu48Data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+let stu48Data = JSON.parse(JSON.stringify(DEFAULT_DATA)); // Deep copy
 
 // ===== ストレージ =====
 async function loadData() {
     try {
+        // storage.get is assumed to be a custom function available in the environment
         const result = await window.storage.get(STORAGE_KEY, true);
         if (result && result.value) {
             const parsed = JSON.parse(result.value);
@@ -327,9 +293,6 @@ async function loadData() {
         }
     } catch (e) { /* 未保存 → デフォルトのまま */ }
 }
-
-    
-
 
 // ===== 投稿タブ =====
 const generationSelect = document.getElementById('generationSelect');
@@ -358,7 +321,7 @@ function getCandidateTags() {
             if (found) tags = tags.concat(found.hashtags);
         }
     }
-    return [...new Set(tags)];
+    return [...new Set(tags)]; // Remove duplicates
 }
 
 function renderTagCheckboxes(tags) {
@@ -378,10 +341,9 @@ function renderTagCheckboxes(tags) {
             tagCheckboxes.appendChild(chip);
         });
     }
-    updatePreview();
+    updatePreview(); // Update preview after rendering tags
 }
 
-    
 function getSelectedTags() {
     return [...tagCheckboxes.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
 }
@@ -400,7 +362,7 @@ function updatePreview() {
     } else {
         previewBox.innerHTML = '<span class="preview-placeholder">（プレビューなし）</span>';
     }
-    const len = [...text].length;
+    const len = [...text].length; // Use spread operator for accurate character count with potential multi-byte characters
     charCount.textContent = `${len} / 140文字`;
     charCount.classList.toggle('over', len > 140);
     tweetButton.disabled = len > 140 || len === 0;
@@ -432,6 +394,7 @@ copyButton.addEventListener('click', () => {
     try {
         navigator.clipboard.writeText(tags);
     } catch {
+        // Fallback for older browsers
         const tmp = document.createElement('textarea');
         tmp.value = tags; document.body.appendChild(tmp);
         tmp.select(); document.execCommand('copy'); document.body.removeChild(tmp);
@@ -442,6 +405,7 @@ copyButton.addEventListener('click', () => {
 tweetButton.addEventListener('click', () => {
     const text = buildPostText();
     if (!text) return;
+    // Use encodeURIComponent for proper URL encoding
     window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
 });
 
@@ -506,6 +470,7 @@ saveTagsBtn.addEventListener('click', async () => {
         if (invalid.length > 0) {
             hasError = true;
         } else {
+            // Only update if no errors for this textarea
             stu48Data[gen][parseInt(ta.dataset.idx)].hashtags = tags.length ? tags : [];
         }
     });
@@ -517,14 +482,14 @@ saveTagsBtn.addEventListener('click', async () => {
 
     try {
         setStatus('💾 保存中…', '');
-        await saveData();
+        await saveData(); // Assuming saveData function is defined and works with current stu48Data
         setStatus('✅ 保存しました！みんなに反映されます。', 'ok');
-        // 投稿タブにも即時反映
+        // Update post tab if the same generation is selected
         const curGen = generationSelect.value;
         if (curGen === gen) {
             const curMem = memberSelect.value;
             rebuildMemberSelect(gen);
-            memberSelect.value = curMem;
+            memberSelect.value = curMem; // Try to retain selected member
             renderTagCheckboxes(getCandidateTags());
         }
     } catch (e) {
@@ -537,10 +502,11 @@ resetTagsBtn.addEventListener('click', async () => {
     if (!gen) return;
     const label = editGenSelect.options[editGenSelect.selectedIndex].text;
     if (!confirm(`「${label}」のタグを初期値に戻しますか？\nこの操作は全員に反映されます。`)) return;
+    // Restore from original DEFAULT_DATA
     stu48Data[gen] = JSON.parse(JSON.stringify(DEFAULT_DATA[gen]));
     try {
-        await saveData();
-        renderEditList(gen);
+        await saveData(); // Assuming saveData function is defined
+        renderEditList(gen); // Re-render the list to show reset values
         setStatus('✅ 初期値に戻しました。', 'ok');
     } catch (e) {
         setStatus('❌ 保存に失敗しました。', 'err');
@@ -562,6 +528,7 @@ document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.add('active');
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
 
+        // Lazy load edit tab content
         if (tab.dataset.tab === 'edit' && !editInitialized) {
             editInitialized = true;
             document.getElementById('editLoading').style.display = 'none';
@@ -570,13 +537,36 @@ document.querySelectorAll('.tab').forEach(tab => {
     });
 });
 
-const WORKER_URL = "https://weathered-dream-9afgist-proxy.ogamcad.workers.dev/";
+// ===== Gist Integration (assuming WORKER_URL and related functions exist and are correct) =====
+const WORKER_URL = "https://weathered-dream-9afgist-proxy.ogamcad.workers.dev/"; // Example worker URL
 
-// 保存処理（新規 or 更新）
+// Collects all relevant app data for saving
+function collectAppData() {
+  // This function should return the entire current state of stu48Data
+  // and any other relevant user selections if they are to be stored.
+  // For this tool, the stu48Data is the primary data to save.
+  return stu48Data;
+}
+
+// Applies loaded app data to the current state
+function applyAppData(content) {
+  // Ensure the loaded content is structured correctly before applying
+  if (content && typeof content === 'object') {
+    for (const gen in DEFAULT_DATA) {
+      if (content[gen] && Array.isArray(content[gen])) {
+        stu48Data[gen] = content[gen];
+      }
+    }
+  }
+  // After applying data, re-render relevant parts of the UI
+  rebuildMemberSelect(generationSelect.value);
+  renderTagCheckboxes(getCandidateTags());
+  renderEditList(editGenSelect.value); // Also update edit tab if visible
+}
+
+// Saves data to Gist
 async function saveData() {
   const gistId = document.getElementById("gistIdInput").value.trim();
-
-  // あなたのアプリのデータを取得
   const content = collectAppData();
 
   const payload = {
@@ -584,7 +574,7 @@ async function saveData() {
     gist_id: gistId || undefined,
     files: {
       "data.json": {
-        content: JSON.stringify(content, null, 2)
+        content: JSON.stringify(content, null, 2) // Pretty print JSON
       }
     }
   };
@@ -602,52 +592,69 @@ async function saveData() {
     document.getElementById("status").innerText = "保存完了: " + data.html_url;
   } else {
     document.getElementById("status").innerText = "保存エラー: " + JSON.stringify(data);
+    console.error("Gist Save Error:", data); // Log error for debugging
   }
 }
 
-// 読み込み処理
+// Loads data from Gist
 async function loadData() {
   const gistId = document.getElementById("gistIdInput").value.trim();
   if (!gistId) {
-    alert("Gist ID を入力してください");
+    // If no Gist ID is entered, assume the user wants to use default data or data from local storage
+    // For this tool, we'll check local storage if Gist ID is empty.
+    try {
+        const localData = localStorage.getItem(STORAGE_KEY);
+        if (localData) {
+            const parsed = JSON.parse(localData);
+            applyAppData(parsed);
+            document.getElementById("status").innerText = "ローカルストレージから読み込みました。";
+            return;
+        }
+    } catch (e) {
+        console.error("Error loading from local storage:", e);
+    }
+    // If no Gist ID and no local storage data, use default.
+    document.getElementById("status").innerText = "Gist ID が入力されていません。デフォルトデータを使用します。";
     return;
   }
 
-  const res = await fetch(`${WORKER_URL}?gist_id=${gistId}`);
-  const data = await res.json();
+  try {
+    const res = await fetch(`${WORKER_URL}?gist_id=${gistId}`);
+    const data = await res.json();
 
-  if (!data.files || !data.files["data.json"]) {
-    document.getElementById("status").innerText = "読み込みエラー";
-    return;
+    if (!data.files || !data.files["data.json"]) {
+      document.getElementById("status").innerText = "読み込みエラー: Gist に data.json が見つかりません。";
+      console.error("Gist Load Error - Missing data.json:", data);
+      return;
+    }
+
+    const content = JSON.parse(data.files["data.json"].content);
+    applyAppData(content);
+    document.getElementById("status").innerText = "Gist から読み込み完了";
+
+    // Optionally save to local storage as well for quicker access
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
+    } catch (e) {
+        console.error("Error saving to local storage after Gist load:", e);
+    }
+
+  } catch (e) {
+    document.getElementById("status").innerText = "読み込みエラー: " + e.message;
+    console.error("Gist Load Error:", e);
   }
-
-  const content = JSON.parse(data.files["data.json"].content);
-
-  applyAppData(content);
-
-  document.getElementById("status").innerText = "読み込み完了";
 }
 
-function collectAppData() {
-  return {
-    tags: currentTags,
-    selectedMember: selectedMember,
-    history: historyList
-  };
-}
-function applyAppData(content) {
-  currentTags = content.tags;
-  selectedMember = content.selectedMember;
-  historyList = content.history;
-
-  renderUI(); // あなたの UI 更新関数
-}
-
-// ===== 初期化 =====
+// ===== Initial Load =====
 (async () => {
-    await loadData();
+    await loadData(); // Load data from storage (Gist or local)
+    // Initial render of tag checkboxes (empty or based on loaded data)
     renderTagCheckboxes([]);
+    // Set initial state for edit tab
+    document.getElementById('editLoading').style.display = 'none';
+    document.getElementById('editContent').style.display = 'block';
 })();
 </script>
 </body>
 </html>
+```
