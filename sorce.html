@@ -1,4 +1,24 @@
 
+<!--
+  ===== セットアップ手順（管理者向け・初回のみ） =====
+  このツールはタグデータをGitHub Gistに保存し、Gistの履歴機能でバージョン管理します。
+
+  1. https://gist.github.com/ で新規Gistを作成
+     - ファイル名: stu48-hashtag-data.json
+     - 内容: このページの「✏️ タグ編集」で保存した時と同じ形式のJSON
+             （最初は下の DEFAULT_DATA と同じ内容でOK。scriptタグ内の
+             init_gist_content.json を参照、または一旦 {} でも可）
+     - Public / Secret どちらでも可（Secretでも読み取りAPIは使えます）
+  2. 作成後のURL（例: https://gist.github.com/ユーザー名/abcdef123456...）から
+     Gist IDをコピーし、下の `const GIST_ID = '';` に貼り付けてコミット・push
+  3. 管理者は https://github.com/settings/tokens で
+     Fine-grained tokenを発行（Permissions > Gists > Read and write）
+     「✏️ タグ編集」タブ上部にトークンを貼り付けると保存できるようになります
+     （トークンは自分のブラウザのlocalStorageにのみ保存され、リポジトリには含まれません）
+  4. 変更履歴・巻き戻しは「📜 変更履歴を見る（Gist）」リンク、または
+     https://gist.github.com/{GIST_ID}/revisions から確認・復元できます
+  ================================================
+-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -186,6 +206,15 @@
     <div class="tab-content" id="tab-edit">
         <div id="editLoading" class="loading">📡 データを読み込み中…</div>
         <div id="editContent" style="display:none;">
+            <div class="alert-banner" id="gistSetupWarning" style="display:none;">⚠️ GIST_ID が未設定です。ページ下部のコメントを参考にGistを作成し、コード内の <code>GIST_ID</code> を設定してください。</div>
+            <div class="form-group" style="margin-top:4px;">
+                <label for="adminToken">管理者用 GitHubトークン（保存時のみ必要・このブラウザにのみ保存されます）:</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="password" id="adminToken" placeholder="ghp_..." style="flex:1; padding:11px; border:1px solid #ccc; border-radius:8px; font-size:1.05em;">
+                    <button id="tokenClearBtn" class="btn btn-gray" type="button">削除</button>
+                </div>
+                <div class="hint">gistスコープのPersonal Access Tokenを入力すると自動で保存されます。<a id="historyLink" href="#" target="_blank" rel="noopener">📜 変更履歴を見る（Gist）</a></div>
+            </div>
             <div class="form-group" style="margin-top:4px;">
                 <label for="editGenSelect">編集する期生を選択:</label>
                 <select id="editGenSelect">
@@ -275,8 +304,22 @@ const DEFAULT_DATA = {
     ]
 };
 
-const STORAGE_KEY = 'stu48-hashtag-data-v1';
+// ▼▼▼ 初回セットアップ時にここを書き換える ▼▼▼
+// Gistを作成後、そのIDをここに入れてコミットしてください（下部セットアップ手順を参照）
+const GIST_ID = '2abb8e675c8db315844ba80833ffcbdf';
+const GIST_FILENAME = 'stu48-hashtag-data.json';
+// ▲▲▲ ここまで ▲▲▲
+
+const TOKEN_KEY = 'stu48-gist-token'; // 管理者のPAT（このブラウザにのみ保存。共有PCでは使用後に削除推奨）
 let stu48Data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
+function getToken() {
+    return localStorage.getItem(TOKEN_KEY) || '';
+}
+function setToken(token) {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+}
 
 const generationSelect = document.getElementById('generationSelect');
 const memberSelect     = document.getElementById('memberSelect');
@@ -287,6 +330,9 @@ const previewBox       = document.getElementById('previewBox');
 const copyButton       = document.getElementById('copyButton');
 const tweetButton      = document.getElementById('tweetButton');
 
+const adminToken     = document.getElementById('adminToken');
+const tokenClearBtn  = document.getElementById('tokenClearBtn');
+const historyLink    = document.getElementById('historyLink');
 const editGenSelect  = document.getElementById('editGenSelect');
 const memberEditList = document.getElementById('memberEditList');
 const editButtons    = document.getElementById('editButtons');
@@ -304,33 +350,62 @@ const GEN_TAG = {
 };
 
 async function loadData() {
+    if (!GIST_ID) {
+        console.warn('GIST_IDが未設定です。初期値で表示しています。');
+        return;
+    }
     try {
-        let stored = null;
-        if (window.storage && typeof window.storage.get === 'function') {
-            const result = await window.storage.get(STORAGE_KEY, true);
-            stored = result?.value ?? null;
-        } else if (typeof localStorage !== 'undefined') {
-            stored = localStorage.getItem(STORAGE_KEY);
-        }
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            for (const gen of Object.keys(DEFAULT_DATA)) {
-                if (Array.isArray(parsed[gen])) {
-                    stu48Data[gen] = parsed[gen];
-                }
+        const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+            headers: { 'Accept': 'application/vnd.github+json' }
+        });
+        if (!res.ok) throw new Error(`Gist取得に失敗しました (HTTP ${res.status})`);
+        const gist = await res.json();
+        const file = gist.files && gist.files[GIST_FILENAME];
+        if (!file) throw new Error(`Gist内に ${GIST_FILENAME} が見つかりません`);
+
+        const content = file.truncated
+            ? await (await fetch(file.raw_url)).text()
+            : file.content;
+
+        const parsed = JSON.parse(content);
+        for (const gen of Object.keys(DEFAULT_DATA)) {
+            if (Array.isArray(parsed[gen])) {
+                stu48Data[gen] = parsed[gen];
             }
         }
     } catch (error) {
-        console.warn('データ読み込みに失敗しました:', error);
+        console.warn('データ読み込みに失敗しました。初期値を使用します:', error);
     }
 }
 
 async function saveData() {
-    const serialized = JSON.stringify(stu48Data);
-    if (window.storage && typeof window.storage.set === 'function') {
-        await window.storage.set(STORAGE_KEY, serialized, true);
-    } else if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, serialized);
+    if (!GIST_ID) {
+        throw new Error('GIST_IDが未設定です。セットアップ手順を確認してください。');
+    }
+    const token = getToken();
+    if (!token) {
+        throw new Error('GitHubトークンが未設定です。「✏️ タグ編集」タブ上部でトークンを入力してください。');
+    }
+
+    const serialized = JSON.stringify(stu48Data, null, 2);
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json'
+        },
+        body: JSON.stringify({
+            files: { [GIST_FILENAME]: { content: serialized } }
+        })
+    });
+
+    if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+            setToken('');
+            throw new Error('トークンが無効です。再度トークンを入力してください。');
+        }
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`保存に失敗しました (HTTP ${res.status}) ${err.message || ''}`);
     }
 }
 
@@ -462,6 +537,15 @@ function setStatus(message, type) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    adminToken.value = getToken();
+    adminToken.addEventListener('change', () => setToken(adminToken.value.trim()));
+    tokenClearBtn.addEventListener('click', () => {
+        setToken('');
+        adminToken.value = '';
+    });
+    historyLink.href = GIST_ID ? `https://gist.github.com/${GIST_ID}/revisions` : '#';
+    document.getElementById('gistSetupWarning').style.display = GIST_ID ? 'none' : 'block';
+
     generationSelect.addEventListener('change', () => {
         rebuildMemberSelect(generationSelect.value);
         renderTagCheckboxes(getCandidateTags());
