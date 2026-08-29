@@ -421,6 +421,14 @@ async function loadData() {
   }
 }
 
+// トークンが無効と判明した時に、保存されている値と画面表示を確実に一致させる
+// （画面には●●●が残ったまま実体だけ空になる、という食い違いを防ぐ）
+function invalidateToken() {
+  setToken('');
+  if (adminToken) adminToken.value = '';
+  applyButtonVisibility();
+}
+
 async function saveData() {
   if (!GIST_ID) {
     throw new Error('GIST_IDが未設定です。セットアップ手順を確認してください。');
@@ -441,11 +449,16 @@ async function saveData() {
     })
   });
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      setToken('');
-      throw new Error('トークンが無効です。再度トークンを入力してください。');
-    }
     const err = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      // 401は「トークン自体が無効・期限切れ」がほぼ確定なので削除する
+      invalidateToken();
+      throw new Error('トークンが無効（期限切れ・取り消し済み）です。再度トークンを入力してください。');
+    }
+    if (res.status === 403) {
+      // 403は権限不足の場合が多く、トークン自体は有効なこともあるため削除しない
+      throw new Error(`権限が不足しています (HTTP 403)。トークンの Account permissions → Gists に「Read and write」があるか確認してください。${err.message || ''}`);
+    }
     throw new Error(`保存に失敗しました (HTTP ${res.status}) ${err.message || ''}`);
   }
 }
@@ -638,13 +651,29 @@ async function loadPendingRequests() {
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues?state=open&labels=${encodeURIComponent(REQUEST_LABEL)}&per_page=30`,
       { headers }
     );
-    if (!res.ok) throw new Error(`Issue取得に失敗しました (HTTP ${res.status})`);
+    if (!res.ok) {
+      if (res.status === 401) {
+        invalidateToken();
+        throw new Error('トークンが無効です。再度トークンを入力してください。');
+      }
+      if (res.status === 403) {
+        const err = await res.json().catch(() => ({}));
+        const isRateLimit = /rate limit/i.test(err.message || '');
+        throw new Error(isRateLimit
+          ? 'GitHub APIのレート制限に達しました。しばらく待ってから再度お試しください。'
+          : `権限が不足しています (HTTP 403)。トークンの Repository permissions → Issues に「Read」以上があるか確認してください。${err.message || ''}`);
+      }
+      if (res.status === 404) {
+        throw new Error(`リポジトリが見つかりません (HTTP 404)。GITHUB_OWNER/GITHUB_REPO の設定を確認してください。`);
+      }
+      throw new Error(`Issue取得に失敗しました (HTTP ${res.status})`);
+    }
     const issues = await res.json();
     renderPendingRequests(issues.filter(issue => !issue.pull_request));
   } catch (error) {
     console.error(error);
     pendingRequestsList.className = 'status-msg err';
-    pendingRequestsList.innerHTML = '❌ リクエストの取得に失敗しました。';
+    pendingRequestsList.innerHTML = '❌ ' + error.message;
   }
 }
 
@@ -742,8 +771,12 @@ async function closeIssue(issueNumber, comment, stateReason) {
     body: JSON.stringify({ state: 'closed', state_reason: stateReason })
   });
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      throw new Error('Issueをクローズできませんでした。トークンにIssuesの書き込み権限があるか確認してください。');
+    if (res.status === 401) {
+      invalidateToken();
+      throw new Error('トークンが無効（期限切れ・取り消し済み）です。再度トークンを入力してください。');
+    }
+    if (res.status === 403) {
+      throw new Error('Issueをクローズできませんでした。トークンの Repository permissions → Issues に「Read and write」があるか確認してください。');
     }
     throw new Error(`Issueのクローズに失敗しました (HTTP ${res.status})`);
   }
