@@ -806,6 +806,11 @@ async function rejectRequest(issue, statusEl, approveBtn, rejectBtn) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   adminToken.value = getToken();
+  // 入力するたびに即保存する（フォーカスが外れる前にボタンを押しても
+  // トークン未設定にならないようにするため）
+  adminToken.addEventListener('input', () => {
+    setToken(adminToken.value.trim());
+  });
   adminToken.addEventListener('change', () => {
     setToken(adminToken.value.trim());
     updateEditModeUI();
